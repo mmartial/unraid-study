@@ -2,11 +2,35 @@
 
 Them aim is to create a "localhost-only Linux Desktop in a container on Unraid accessed over a non-root ssh tunnel and adding Tailscale to add a Zero Conf VPN over Wireguard" :)
 
-## Considerations
+<!-- vscode-markdown-toc -->
+* 1. [Considerations](#Considerations)
+* 2. [Tools listed](#Toolslisted)
+* 3. [Notes](#Notes)
+* 4. [Unraid: key-based ssh setup](#Unraid:key-basedsshsetup)
+	* 4.1. [root user](#rootuser)
+	* 4.2. [local user](#localuser)
+	* 4.3. [Persisting ssh keys over reboot (root only)](#Persistingsshkeysoverrebootrootonly)
+		* 4.3.1. [TCP Forwarding](#TCPForwarding)
+		* 4.3.2. [Post reboot: re-allow luser access](#Postreboot:re-allowluseraccess)
+* 5. [Unraid rdesktop with Jump Desktop access](#UnraidrdesktopwithJumpDesktopaccess)
+	* 5.1. [rdesktop: Install](#rdesktop:Install)
+	* 5.2. [rdekstop: Listen on localhost only](#rdekstop:Listenonlocalhostonly)
+	* 5.3. [Connect using a ssh tunnel](#Connectusingasshtunnel)
+	* 5.4. [Adding Tailscale to your ssh access localhost only rdesktop setup](#AddingTailscaletoyoursshaccesslocalhostonlyrdesktopsetup)
+* 6. [References](#References)
+
+<!-- vscode-markdown-toc-config
+	numbering=true
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc -->
+<!-- NOTE: joffreykern.markdown-toc use Ctrl+Shift+P to call Generate TOC for MarkDown-->
+
+##  1. <a name='Considerations'></a>Considerations
 
 It would have been simple to simply enable Tailscale and `rdesktop` and connect to the RDP port without the ssh tunnel but this was an exercise to remove the exposure of a sensitive service on a non encrypted port from being accessible even to the LAN.
 
-## Tools listed
+##  2. <a name='Toolslisted'></a>Tools listed
 
 - [Unraid.net](https://unraid.net/) 
     - Plugin: [docgyver's SSH Config Tool](https://forums.unraid.net/topic/45586-ssh-and-denyhosts-updated-for-v61/)
@@ -14,9 +38,8 @@ It would have been simple to simply enable Tailscale and `rdesktop` and connect 
     - Container: [linuxserver.io docker-rdesktop](https://github.com/linuxserver/docker-rdesktop)
 - [Tailscale.com](https://tailscale.com/)
 - [JumpDesktop.com](https://www.jumpdesktop.com/)
-- 
 
-## Notes
+##  3. <a name='Notes'></a>Notes
 
 During the intiial setup, With `DocGyver`'s `SSH Config Tool` installed, make sure to allow enough `Max Auth Retries` for `ssh` to try all your keys before the password is finally prompted for.
 
@@ -29,9 +52,9 @@ We will require some `ssh` keys:
 In the following, adapt `unraid_id` with your unraid server IP.
 In this setup, the server is NOT accessible on the Internet, only for LAN access, and using encrypted Wireguard tunnel over Tailscale.
 
-## Unraid: key-based ssh setup
+##  4. <a name='Unraid:key-basedsshsetup'></a>Unraid: key-based ssh setup
 
-### root user
+###  4.1. <a name='rootuser'></a>root user
 
 With an `unraid_root` and `unraid_root.pub` `ssh` keys in your `~/.ssh` directory 
 
@@ -46,7 +69,7 @@ Test it, it should be key-based (password-less) now:
 ssh -i ~/.ssh/unraid_root root@unraid_ip
 ```
 
-### local user
+###  4.2. <a name='localuser'></a>local user
 
 On the Unraid UI, in `Settings -> Users` add a non `root` (regular) user; for example `luser` and remember its password.
 This user will have any special privileges on the host which is the desired state.
@@ -64,7 +87,7 @@ Test it, it too shall be key-based (and password-less) now:
 ssh -i ~/.ssh/unraid_luser luser@unraid_ip
 ```
 
-### Persisting ssh keys over reboot (root only)
+###  4.3. <a name='Persistingsshkeysoverrebootrootonly'></a>Persisting ssh keys over reboot (root only)
 
 As `root` on the Unraid server, copy the `authorized_keys` files with the name of the user (for the `%u` step later to work), then adapt an `sshd_config` to use those files.
 
@@ -92,11 +115,11 @@ Restart the `sshd` service:
 /etc/rc.d/rc.sshd restart
 ```
 
-#### TCP Forwarding
+####  4.3.1. <a name='TCPForwarding'></a>TCP Forwarding
 
 While we are doing this, for ssh tunneling to be enabled for our later setup, please `nano /boot/config/ssh/sshd_config`, uncomment the `AllowTcpForwarding yes` line (and comment its `no` counterpart) before an `/etc/rc.d/rc.sshd restart`. 
 
-#### Post reboot: re-allow luser access
+####  4.3.2. <a name='Postreboot:re-allowluseraccess'></a>Post reboot: re-allow luser access
 
 The `luser` user will be recreated after reboot, so its `.ssh` directory will need to have its key re-added to it, luckily it is in the `/etc/ssh` directory:
 ```
@@ -104,7 +127,7 @@ ssh -i ~/.ssh/unraid_root root@unraid_ip
 cp /etc/ssh/luser.pubkeys /home/luser/.ssh/authorized_keys
 ```
 
-## Unraid rdesktop with Jump Desktop access
+##  5. <a name='UnraidrdesktopwithJumpDesktopaccess'></a>Unraid rdesktop with Jump Desktop access
 
 We will be installing this https://hub.docker.com/r/linuxserver/rdesktop container (`rdesktop` in the `Community Applications`)
 
@@ -112,7 +135,7 @@ We will be using [Jump Desktop](https://www.jumpdesktop.com/) to access it, but 
 
 Note that you might get invalid certificate errors when you connect, it is okay to accept those (either self-signed or host mismatch -- unraid.net certifcates with a different IP).
 
-### rdesktop: Install
+###  5.1. <a name='rdesktop:Install'></a>rdesktop: Install
 
 In Unraid's UI, select `Apps` and search for the `rdesktop` (from `linuxserver`'s Repository) container.
 Install it in `Bridge` `Network Type` and set up the other parameters as you prefer them; chose your prefered `branch` (I am using `mate-focal` for my setup).
@@ -124,7 +147,7 @@ The default username and password are `abc` for both, you can change it from a `
 
 From the `Docker` tab in Unraid, `Stop` the container
 
-### rdekstop: Listen on localhost only
+###  5.2. <a name='rdekstop:Listenonlocalhostonly'></a>rdekstop: Listen on localhost only
 
 To disable `rdesktop` from answering requests on the unraid_ip, on the `Docker` tab, `Edit` the container. 
 
@@ -137,7 +160,7 @@ In the `Docker` tab, start the container.
 
 If you now try to connect using Jump Desktop, you will get "Connection Refused".
 
-### Connect using a ssh tunnel
+###  5.3. <a name='Connectusingasshtunnel'></a>Connect using a ssh tunnel
 
 In the Jump Desktop configuration for your host, create a `SSH Tunnel` configuration with unraid_ip and `luser` in the parameters for this `SSH Server` setup; keep `Password` authentication for testing purpose.
 
@@ -145,7 +168,7 @@ In the `Address` section use `127.0.0.1:3389` instead of `unraid_ip:3389`, the s
 
 Once confirmed functional, you ca edit Jump Desktop's `SSH Server` to add the `Public Key` Authentication.
 
-### Adding Tailscale to your ssh access localhost only rdesktop setup
+###  5.4. <a name='AddingTailscaletoyoursshaccesslocalhostonlyrdesktopsetup'></a>Adding Tailscale to your ssh access localhost only rdesktop setup
 
 With your Unraid already configured with the Tailscale container ( https://github.com/deasmi/unraid-tailscale ), obtain the IP of your Unraid box and `Duplicate` your host configuration in Jump Desktop.
 
@@ -153,7 +176,7 @@ With your Unraid already configured with the Tailscale container ( https://githu
 
 Congratulations, you now have a "localhost-only Linux Desktop in a container on Unraid accessed over a non-root ssh tunnel and adding Tailscale to add a Zero Conf VN over Wireguard" :)
 
-## References
+##  6. <a name='References'></a>References
 
 - Persistent ssh key access
 https://blog.edwinclement08.com/post/unraid-server-adding-password-less-login/
