@@ -1,6 +1,6 @@
 # rdesktop access on Unraid using a Jump Desktop RDC with a ssh-tunnel over Tailscale
 
-Them aim is to create a "localhost-only Linux Desktop in a container on Unraid accessed over a non-root ssh tunnel and adding Tailscale to add a Zero Conf VPN over Wireguard" :)
+The aim is to create a "localhost-only Linux Desktop in a container on Unraid accessed over a non-root ssh tunnel and adding Tailscale to add a Zero Conf VPN over Wireguard" :)
 
 <!-- vscode-markdown-toc -->
 * 1. [Considerations](#Considerations)
@@ -49,7 +49,7 @@ We will require some `ssh` keys:
 - We also recommend to add a passphrase to each key.
 - Make sure the file permissions in your `~/.ssh` directory are correct, they are often the source of connections errors.
 
-In the following, adapt `unraid_id` with your unraid server IP.
+In the following, adapt `unraid_ip` with your unraid server IP.
 In this setup, the server is NOT accessible on the Internet, only for LAN access, and using encrypted Wireguard tunnel over Tailscale.
 
 ##  4. <a name='Unraid:key-basedsshsetup'></a>Unraid: key-based ssh setup
